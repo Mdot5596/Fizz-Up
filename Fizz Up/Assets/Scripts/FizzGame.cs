@@ -17,6 +17,7 @@ public class FizzGame : MonoBehaviour
     public float maxFizz = 100;
     private float timer = 0f;
     private bool gameRunning = true;
+     private bool canRestart = false; 
 
     private List<float> previousTimes = new List<float>();
 
@@ -24,7 +25,7 @@ public class FizzGame : MonoBehaviour
     {
         restartButton.gameObject.SetActive(false);
         restartButton.onClick.AddListener(RestartGame);
-        LoadHistory(); // Load history on start
+        LoadHistory(); 
     }
 
     void Update()
@@ -39,7 +40,7 @@ public class FizzGame : MonoBehaviour
                 fizzLevel++;
                 fizzText.text = "Shakes: " + fizzLevel;
 
-                 canFR1Image.localScale = Vector3.one * (1 + fizzLevel / maxFizz * 0.1f); //VIsual shakes can
+                canFR1Image.localScale = Vector3.one * (1 + fizzLevel / maxFizz * 0.1f); //VIsual shakes can
 
                 if (fizzLevel >= maxFizz)
                 {
@@ -47,8 +48,11 @@ public class FizzGame : MonoBehaviour
                 }
             }
         }
+        else if (canRestart && Input.GetKeyDown(KeyCode.Space))
+        {
+            RestartGame();
+        }
     }
-
 
 
    void EndGame()
@@ -70,6 +74,7 @@ public class FizzGame : MonoBehaviour
    {
     yield return new WaitForSeconds(delay); 
     restartButton.gameObject.SetActive(true); 
+    canRestart = true;
    }    
 
 
@@ -79,12 +84,11 @@ public class FizzGame : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reload scene
     }
 
-    // Updates the top 3 best times
+ 
     void UpdateBestTimes(float newTime)
     {
     previousTimes.Add(newTime);
 
-    // Sort the list in ascending order (best time first)
     previousTimes.Sort();
 
     // Keep only the top 3 times
@@ -123,7 +127,7 @@ void LoadHistory()
         previousTimes.Add(time);
     }
 
-    // Ensure the list is sorted and trimmed
+
     previousTimes.Sort();
     while (previousTimes.Count > 3) previousTimes.RemoveAt(3);
 
