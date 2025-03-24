@@ -9,6 +9,9 @@ public class FizzGame : MonoBehaviour
     public Text timerText;
     public Text historyText;
     public Button restartButton;
+    public Transform canFR1Image;
+    public GameObject explodedCanImage; 
+ 
 
     public float fizzLevel = 0;
     public float maxFizz = 100;
@@ -36,6 +39,8 @@ public class FizzGame : MonoBehaviour
                 fizzLevel++;
                 fizzText.text = "Shakes: " + fizzLevel;
 
+                 canFR1Image.localScale = Vector3.one * (1 + fizzLevel / maxFizz * 0.1f); //VIsual shakes can
+
                 if (fizzLevel >= maxFizz)
                 {
                     EndGame();
@@ -44,49 +49,84 @@ public class FizzGame : MonoBehaviour
         }
     }
 
-    void EndGame()
-    {
-        gameRunning = false;
-        previousTimes.Add(timer);
-        SaveHistory();  // Save history when game ends
-        UpdateHistoryUI();
-        timerText.text += " - DONE!";
-        restartButton.gameObject.SetActive(true);
-    }
+
+
+   void EndGame()
+   {
+    gameRunning = false;
+
+    // Check if the new time qualifies for the top 3
+    UpdateBestTimes(timer);
+    SaveHistory();  // Save top 3 times
+    UpdateHistoryUI();  // Refresh display
+
+    explodedCanImage.SetActive(true); 
+
+    
+    StartCoroutine(ShowRestartButtonWithDelay(1.5f));
+   }
+
+   private System.Collections.IEnumerator ShowRestartButtonWithDelay(float delay)
+   {
+    yield return new WaitForSeconds(delay); 
+    restartButton.gameObject.SetActive(true); 
+   }    
+
+
 
     void RestartGame()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name); // Reload scene
     }
 
+    // Updates the top 3 best times
+    void UpdateBestTimes(float newTime)
+    {
+    previousTimes.Add(newTime);
+
+    // Sort the list in ascending order (best time first)
+    previousTimes.Sort();
+
+    // Keep only the top 3 times
+    if (previousTimes.Count > 3)
+     {
+        previousTimes.RemoveAt(3);
+     }
+    }
+
     void UpdateHistoryUI()
     {
-        historyText.text = "HISTORY\n";
-        foreach (float time in previousTimes)
-        {
-            historyText.text += time.ToString("F2") + "s\n";
-        }
+    historyText.text = "BEST TIMES\n";
+    foreach (float time in previousTimes)
+    {
+        historyText.text += time.ToString("F2") + "s\n";
+    }
     }
 
-    void SaveHistory()
+void SaveHistory()
+{
+    for (int i = 0; i < previousTimes.Count; i++)
     {
-        for (int i = 0; i < previousTimes.Count; i++)
-        {
-            PlayerPrefs.SetFloat("History" + i, previousTimes[i]);
-        }
-        PlayerPrefs.SetInt("HistoryCount", previousTimes.Count);
-        PlayerPrefs.Save();
+        PlayerPrefs.SetFloat("BestTime" + i, previousTimes[i]);
+    }
+    PlayerPrefs.SetInt("HistoryCount", previousTimes.Count);
+    PlayerPrefs.Save();
+}
+
+void LoadHistory()
+{
+    previousTimes.Clear();
+    int count = PlayerPrefs.GetInt("HistoryCount", 0);
+    for (int i = 0; i < count; i++)
+    {
+        float time = PlayerPrefs.GetFloat("BestTime" + i, float.MaxValue);
+        previousTimes.Add(time);
     }
 
-    void LoadHistory()
-    {
-        previousTimes.Clear();
-        int count = PlayerPrefs.GetInt("HistoryCount", 0);
-        for (int i = 0; i < count; i++)
-        {
-            float time = PlayerPrefs.GetFloat("History" + i, 0);
-            previousTimes.Add(time);
-        }
-        UpdateHistoryUI();
-    }
+    // Ensure the list is sorted and trimmed
+    previousTimes.Sort();
+    while (previousTimes.Count > 3) previousTimes.RemoveAt(3);
+
+    UpdateHistoryUI();
+}
 }
